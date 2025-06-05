@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+from environs import Env # type: ignore
+env = Env()
+env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,6 +55,7 @@ INSTALLED_APPS = [
     'anymail',
     'storages',
    	'django_ckeditor_5',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -142,6 +146,21 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 AUTH_USER_MODEL = 'userauths.User'
+
+
+MAILGUN_API_KEY = env("MAILGUN_API_KEY")
+MAILERSEND_API_TOKEN = env("MAILERSEND_API_TOKEN")
+MAILGUN_SENDER_DOMAIN = env("MAILGUN_SENDER_DOMAIN")
+
+ANYMAIL = {
+    "MAILGUN_API_KEY": env("MAILGUN_API_KEY"),
+    "MAILGUN_SENDER_DOMAIN": env("MAILGUN_SENDER_DOMAIN"),
+}
+
+FROM_EMAIL = env("FROM_EMAIL")
+EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
