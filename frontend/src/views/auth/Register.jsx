@@ -1,10 +1,32 @@
-import React from 'react'
+import {useState, useEffect} from 'react'
+import { Link, useNavigate} from 'react-router-dom';
 import BaseHeader from '../partials/BaseHeader'
 import BaseFooter from '../partials/BaseFooter'
-import { Link } from 'react-router-dom'
+import { register } from '../../utils/auth';
 
 
 function Register() {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Account created successfully");
+    setIsLoading(true);
+    
+    const {error} = await register(fullName, email, password, password2);
+    if (error) {
+      alert(error);
+    }else{
+      alert("Registeration successful, you can now login");
+      navigate("/");
+    }
+  }
   return (
     <>
       <BaseHeader />
@@ -24,7 +46,7 @@ function Register() {
                   </span>
                 </div>
                 {/* Form */}
-                <form className="needs-validation" noValidate="">
+                <form className="needs-validation" noValidate="" onSubmit={handleSubmit}>
                   {/* Username */}
                   <div className="mb-3">
                     <label htmlFor="email" className="form-label">Full Name</label>
@@ -33,8 +55,9 @@ function Register() {
                       id="full_name"
                       className="form-control"
                       name="full_name"
-                      placeholder="John Doe"
+                      placeholder="Kartik"
                       required=""
+                      onChange={(e) => setFullName(e.target.value)}
                     />
                   </div>
                   <div className="mb-3">
@@ -44,8 +67,9 @@ function Register() {
                       id="email"
                       className="form-control"
                       name="email"
-                      placeholder="johndoe@gmail.com"
+                      placeholder="kartik@gmail.com"
                       required=""
+                      onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
                   
@@ -59,6 +83,7 @@ function Register() {
                       name="password"
                       placeholder="**************"
                       required=""
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
                   <div className="mb-3">
@@ -70,6 +95,7 @@ function Register() {
                       name="password"
                       placeholder="**************"
                       required=""
+                      onChange={(e) => setPassword2(e.target.value)}
                     />
                   </div>
                   <div>
