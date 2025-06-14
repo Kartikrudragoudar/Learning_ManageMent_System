@@ -22,9 +22,11 @@ function Register() {
     const {error} = await register(fullName, email, password, password2);
     if (error) {
       alert(error);
+      setIsLoading(false)
     }else{
       alert("Registeration successful, you can now login");
       navigate("/");
+      setIsLoading(false)
     }
   }
   return (
@@ -100,9 +102,13 @@ function Register() {
                   </div>
                   <div>
                     <div className="d-grid">
-                      <button type="submit" className="btn btn-primary">
+                      {isLoading === true && (<button disabled type="submit" className="btn btn-primary">
+                        Processing <i className='fas fa-spinner fa-spin'></i>
+                      </button>)  }
+
+                      {isLoading === false && (<button type="submit" className="btn btn-primary">
                         Sign Up <i className='fas fa-user-plus'></i>
-                      </button>
+                      </button>)  }
                     </div>
                   </div>
                 </form>
