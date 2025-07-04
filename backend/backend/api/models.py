@@ -50,6 +50,7 @@ NOTI_TYPE = (
     ("New Course Question", "New Course Question"),
     ("Draft", "Draft"),
     ("Course Published", "Course Published"),
+    ("Course Enrollment Completed", "Course Enrollment Completed")
 )
 
 class Teacher(models.Model):
@@ -78,7 +79,8 @@ class Teacher(models.Model):
 class Category(models.Model):
     title = models.CharField(max_length=100)
     image = models.FileField(upload_to="course-file", default="category.jpg", null=True, blank=True)
-    slug = models.SlugField(unique=True)
+    active = models.BooleanField(default=True)
+    slug = models.SlugField(unique=True, blank=True)
 
     class Meta:
         verbose_name_plural = "Category"
@@ -88,12 +90,12 @@ class Category(models.Model):
         return self.title
     
     def course_count(self):
-        return Course.objects.filter(Category=self).count()
+        return Course.objects.filter(category=self).count()
     
     def save(self, *args, **kwargs):
         if self.slug == "" or self.slug == None:
             self.slug = slugify(self.title)
-        super(Category. self).save(*args, **kwargs)
+        super(Category,self).save(*args, **kwargs)
 
 class Course(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
@@ -109,7 +111,7 @@ class Course(models.Model):
     teacher_course_status = models.CharField(choices=TEACHER_STATUS, default="Published", max_length=100)
     featured = models.BooleanField(default=False)
     course_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet="1234567890")
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True, null=True, blank=True)
     date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -117,8 +119,8 @@ class Course(models.Model):
 
     def save(self,*args, **kwargs):
         if self.slug == "" or self.slug == None:
-            self.slug == slugify(self.title)
-        super(Category, self).save(*args, **kwargs)
+            self.slug = slugify(self.title)
+        super(Course, self).save(*args, **kwargs)
 
     def students(self):
         return EnrolledCourse.objects.filter(course=self)
@@ -127,7 +129,7 @@ class Course(models.Model):
         return VariantItem.objects.filter(variant__course=self)
     
     def lectures(self):
-        return  VariantItems.objects.filter(variant_course=self)
+        return  VariantItem.objects.filter(variant__course=self)
 
     def average_rating(self):
         average_rating = Review.objects.filter(course=self).aggregate(avg_rating=models.Avg('rating'))
@@ -229,7 +231,7 @@ class Cart(models.Model):
     tax_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
     country = models.CharField(max_length=100, null=True, blank=True)
-    cart_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet="1234567890")
+    cart_id = ShortUUIDField(length=6, max_length=20, alphabet="1234567890")
     date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -237,7 +239,7 @@ class Cart(models.Model):
 
 class CartOrder(models.Model):
     student = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    teachers = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    teachers = models.ManyToManyField(Teacher, blank=True)
     sub_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
     tax_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
@@ -263,13 +265,14 @@ class CartOrder(models.Model):
 
 class CartOrderItem(models.Model):
     order = models.ForeignKey(CartOrder, on_delete=models.CASCADE, related_name='orderitem')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="order_item")
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=12, default=0.00, decimal_places=2)
     tax_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
     initial_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
     saved = models.DecimalField(max_digits=12, decimal_places=2, default=0.0)
-    coupons = models.ForeignKey('api.Coupon', blank=True, null=True, on_delete=models.SET_NULL)
+    coupons = models.ManyToManyField("api.Coupon", blank=True)
     applied_coupon = models.BooleanField(default=False)
     order_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet="1234567890")
     date = models.DateTimeField(default=timezone.now)
@@ -278,13 +281,13 @@ class CartOrderItem(models.Model):
         ordering = ['-date']
 
     def order_id(self):
-        return f'order ID #{self.order_id}'
+        return f'order ID #{self.order.order_id}'
     
     def payment_status(self):
         return f'{self.order.payment_status}'
     
     def __str__(self):
-        return self.order_id
+        return f'{self.order_id}'
 
 class Certificate(models.Model):
     course = models.ForeignKey(Course,on_delete=models.CASCADE)
